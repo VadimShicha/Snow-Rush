@@ -2,10 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using UnityEngine.SceneManagement;
 
 public class Main : MonoBehaviour
 {
 	public GameObject player;
+	public static GameObject playerInstance;
 
 	public LayerMask groundMask;
 	public Transform groundChecker;
@@ -16,14 +18,22 @@ public class Main : MonoBehaviour
 	public Tile snowTopTile;
     public Tile snowTile;
 
+	public GameObject flag;
+
 	public float moveSpeed = 4;
 	public float jumpHeight = 5;
 
+	public float deathCheckerY = -5;
+
 	bool grounded = false;
+	bool died = false;
+	int currentLevel = 0;
+
 
 	void Start()
 	{
-		generateLevel(50, 15);
+		playerInstance = gameObject;
+		generateLevel(5, VarManager.levelSeed);
 	}
 
 	void Update()
@@ -47,6 +57,12 @@ public class Main : MonoBehaviour
 			else if(xAxisInput < 0)
 				player.GetComponent<SpriteRenderer>().flipX = true;
 		}
+		else
+		{
+			Vector3 playerVel = player.GetComponent<Rigidbody2D>().velocity;
+
+			player.GetComponent<Rigidbody2D>().velocity = new Vector3(0, playerVel.y, playerVel.z);
+		}
 
 		if(Input.GetKey(KeyCode.Space))
 		{
@@ -57,6 +73,41 @@ public class Main : MonoBehaviour
 				player.GetComponent<Rigidbody2D>().velocity = new Vector3(playerVel.x, jumpHeight, playerVel.z);
 			}
 		}
+
+		if(Input.GetKeyDown(KeyCode.Escape))
+		{
+			SceneManager.LoadScene("LevelSelectScene");
+		}
+
+		//death checker
+		if(player.transform.position.y <= deathCheckerY)
+		{
+			if(died == false)
+			{
+				died = true;
+				die();
+			}
+		}
+	}
+
+	void die()
+	{
+		print("You died!");
+	}
+
+	void win()
+	{
+		print("You win!");
+		VarManager.level = VarManager.levelSeed;
+		VarManager.levelSeed = VarManager.level;
+		VarManager.save();
+
+		SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+	}
+
+	public void loadLevel(int seed)
+	{
+		generateLevel(20, seed);
 	}
 
 	void generateLevel(int platformAmount, int seed)
@@ -75,6 +126,14 @@ public class Main : MonoBehaviour
 			int randSizeY = rand.Next(2) + 1;
 
 			createPlatform(point, point + new Vector3Int(randSizeX, randSizeY, 0));
+
+			//add ending
+			if(i == platformAmount - 1)
+			{
+				//GameObject flagClone = Instantiate(flag);
+				//flagClone.name = flag.name + "Clone";
+				flag.transform.position = new Vector3(point.x + Mathf.RoundToInt(randSizeX / 2), point.y + randSizeY + 0.5f, point.z);
+			}
 
 			point.x += randDistanceX + randSizeX;
 			point.y += randDistanceY + randSizeY;
@@ -99,23 +158,19 @@ public class Main : MonoBehaviour
 		}
 	}
 
+	void OnTriggerEnter2D(Collider2D collision)
+	{
+		if(collision == flag.GetComponent<Collider2D>())
+		{
+			win();
+		}
+	}
+
 	void OnDrawGizmosSelected()
 	{
 		Gizmos.color = Color.cyan;
 		Gizmos.DrawWireSphere(groundChecker.position, groundRadius);
 	}
-
-	//adds one to second arg
-	/*
-	//Example:
-	//rand(1, 10);
-	//will return a number 1 through 10 not 1 through 9
-	*/
-	int rand(int min, int max)
-	{
-		return Random.Range(min, max + 1);
-	}
-
 	/*
 	float hash(float key)
 	{
