@@ -9,31 +9,36 @@ public class Main : MonoBehaviour
 	public GameObject player;
 	public static GameObject playerInstance;
 
+
 	public LayerMask groundMask;
+
 	public Transform groundChecker;
 	public float groundRadius = 0.4f;
 
 	public Tilemap snowTilemap;
+	public Tilemap iceTilemap;
 
 	public Tile snowTopTile;
     public Tile snowTile;
+	public Tile iceTile;
 
 	public GameObject flag;
+	public GameObject saw;
 
 	public float moveSpeed = 4;
 	public float jumpHeight = 5;
+	public float iceFriction = 0.8f;
 
 	public float deathCheckerY = -5;
 
 	bool grounded = false;
 	bool died = false;
-	int currentLevel = 0;
-
+	bool onIce = false;
 
 	void Start()
 	{
 		playerInstance = gameObject;
-		generateLevel(5, VarManager.levelSeed);
+		generateLevel(5, VarManager.level);
 	}
 
 	void Update()
@@ -59,12 +64,15 @@ public class Main : MonoBehaviour
 		}
 		else
 		{
-			Vector3 playerVel = player.GetComponent<Rigidbody2D>().velocity;
+			if(onIce == false)
+			{
+				Vector3 playerVel = player.GetComponent<Rigidbody2D>().velocity;
 
-			player.GetComponent<Rigidbody2D>().velocity = new Vector3(0, playerVel.y, playerVel.z);
+				player.GetComponent<Rigidbody2D>().velocity = new Vector3(0, playerVel.y, playerVel.z);
+			}
 		}
 
-		if(Input.GetKey(KeyCode.Space))
+		if(Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.Mouse2))
 		{
 			if(grounded == true)
 			{
@@ -78,6 +86,8 @@ public class Main : MonoBehaviour
 		{
 			SceneManager.LoadScene("LevelSelectScene");
 		}
+
+		
 
 		//death checker
 		if(player.transform.position.y <= deathCheckerY)
@@ -93,13 +103,13 @@ public class Main : MonoBehaviour
 	void die()
 	{
 		print("You died!");
+		SceneManager.LoadScene(SceneManager.GetActiveScene().name);
 	}
 
 	void win()
 	{
 		print("You win!");
-		VarManager.level = VarManager.levelSeed;
-		VarManager.levelSeed = VarManager.level;
+		VarManager.level++;
 		VarManager.save();
 
 		SceneManager.LoadScene(SceneManager.GetActiveScene().name);
@@ -125,14 +135,41 @@ public class Main : MonoBehaviour
 			int randSizeX = rand.Next(12) + 4;
 			int randSizeY = rand.Next(2) + 1;
 
-			createPlatform(point, point + new Vector3Int(randSizeX, randSizeY, 0));
+			int randIceChance = rand.Next(3);
+			int randIceSizeX = rand.Next(2) + 3;
+			int randIceStartX = 0;
 
+			int randSawChance = rand.Next(5);
+
+			if(randIceChance == 1)
+			{
+				if((randSizeX - randIceSizeX) - 3 > 0)
+				{
+					randIceStartX = rand.Next((randSizeX - randIceSizeX) - 3) + 3;
+				}
+
+				//ice platform
+				createPlatform(new Vector3Int(point.x + randIceStartX, point.y + randSizeY - 1, 0), point + new Vector3Int(randIceStartX + randIceSizeX, randSizeY, 0), iceTilemap, iceTile, iceTile);
+
+				createPlatform(new Vector3Int(point.x + randIceStartX, point.y + randSizeY - 1, 0), point + new Vector3Int(randIceStartX + randIceSizeX, randSizeY, 0), snowTilemap, null, null);
+			}
+
+			if(randSawChance == 1)
+			{
+				GameObject sawClone = Instantiate(saw);
+				sawClone.name = saw.name + "Clone";
+				sawClone.transform.position = new Vector3(point.x + Mathf.RoundToInt(randSizeX / 2), point.y + randSizeY, 0);
+			}
+			
+			
+			createPlatform(point, point + new Vector3Int(randSizeX, randSizeY, 0), snowTilemap, snowTopTile, snowTile);
+			
 			//add ending
 			if(i == platformAmount - 1)
 			{
 				//GameObject flagClone = Instantiate(flag);
 				//flagClone.name = flag.name + "Clone";
-				flag.transform.position = new Vector3(point.x + Mathf.RoundToInt(randSizeX / 2), point.y + randSizeY + 0.5f, point.z);
+				flag.transform.position = new Vector3(point.x + Mathf.RoundToInt(randSizeX / 2) - 1, point.y + randSizeY + 0.5f, point.z);
 			}
 
 			point.x += randDistanceX + randSizeX;
@@ -140,7 +177,7 @@ public class Main : MonoBehaviour
 		}
 	}
 
-	void createPlatform(Vector3Int pos1, Vector3Int pos2)
+	void createPlatform(Vector3Int pos1, Vector3Int pos2, Tilemap tilemap, Tile topTile, Tile tile)
 	{
 		for(int x = pos1.x; x < pos2.x; x++)
 		{
@@ -148,11 +185,11 @@ public class Main : MonoBehaviour
 			{
 				if(y == pos2.y - 1)
 				{
-					snowTilemap.SetTile(new Vector3Int(x, y, 0), snowTopTile);
+					tilemap.SetTile(new Vector3Int(x, y, 0), topTile);
 				}
 				else
 				{
-					snowTilemap.SetTile(new Vector3Int(x, y, 0), snowTile);
+					tilemap.SetTile(new Vector3Int(x, y, 0), tile);
 				}
 			}
 		}
@@ -163,6 +200,22 @@ public class Main : MonoBehaviour
 		if(collision == flag.GetComponent<Collider2D>())
 		{
 			win();
+		}
+	}
+
+	void OnCollisionEnter2D(Collision2D collision)
+	{
+		if(collision.gameObject == iceTilemap.gameObject)
+		{
+			onIce = true;
+		}
+	}
+
+	void OnCollisionExit2D(Collision2D collision)
+	{
+		if(collision.gameObject == iceTilemap.gameObject)
+		{
+			onIce = false;
 		}
 	}
 

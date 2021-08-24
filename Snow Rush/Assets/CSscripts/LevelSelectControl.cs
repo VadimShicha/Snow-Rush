@@ -7,7 +7,7 @@ using TMPro;
 
 public class LevelSelectControl : MonoBehaviour
 {
-	public GameObject player;
+	public TMP_Text pageCounter;
 
 	public const int LEVELSPERPAGE = 15;
 	public const int PAGES = 5 - 1;
@@ -36,6 +36,9 @@ public class LevelSelectControl : MonoBehaviour
 		{
 			SceneManager.LoadScene("MenuScene");
 		}
+
+		//pageCounter
+		pageCounter.text = "Page: " + (currentPage + 1);
 	}
 	/// <summary>
 	/// -1 = lastPage, 1 = nextPage
@@ -82,7 +85,7 @@ public class LevelSelectControl : MonoBehaviour
 			Button button = levels[i].transform.Find("LevelButton" + (i + 1)).GetComponent<Button>();
 			TMP_Text text = button.transform.GetChild(0).GetComponent<TMP_Text>();
 
-			if(VarManager.level + 1 >= (currentPage * LEVELSPERPAGE) + i)
+			if(VarManager.level >= (currentPage * LEVELSPERPAGE) + i)
 			{
 				text.text = ((currentPage * LEVELSPERPAGE) + (i + 1)).ToString();
 				
@@ -106,12 +109,12 @@ public class LevelSelectControl : MonoBehaviour
 	void levelButtonClick(int index)
 	{
 		print(index + 1);
-		VarManager.levelSeed = index;
+		VarManager.level = index;
 		SceneManager.LoadScene("SampleScene");
 	}
 
 	public void currentLevelButtonClick()
 	{
-		levelButtonClick(VarManager.level + 1);
+		levelButtonClick(VarManager.level);
 	}
 }
