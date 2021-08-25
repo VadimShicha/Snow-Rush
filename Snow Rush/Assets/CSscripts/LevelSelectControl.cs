@@ -10,14 +10,15 @@ public class LevelSelectControl : MonoBehaviour
 	public TMP_Text pageCounter;
 
 	public const int LEVELSPERPAGE = 15;
-	public const int PAGES = 5 - 1;
+	public const int PAGES = 8 - 1;
 
 	public GameObject[] levels = new GameObject[LEVELSPERPAGE];
 
 	int currentPage = 0;
-
+	
 	void Start()
 	{
+		VarManager.load();
 		displayPage();
 	}
 
@@ -109,7 +110,11 @@ public class LevelSelectControl : MonoBehaviour
 	void levelButtonClick(int index)
 	{
 		print(index + 1);
-		VarManager.level = index;
+
+		if(VarManager.level < index)
+			VarManager.level = index;
+		
+		VarManager.currentLevel = index;
 		SceneManager.LoadScene("SampleScene");
 	}
 

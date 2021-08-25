@@ -34,11 +34,12 @@ public class Main : MonoBehaviour
 	bool grounded = false;
 	bool died = false;
 	bool onIce = false;
+	bool won = false;
 
 	void Start()
 	{
 		playerInstance = gameObject;
-		generateLevel(5, VarManager.level);
+		generateLevel(5, VarManager.currentLevel);
 	}
 
 	void Update()
@@ -92,32 +93,40 @@ public class Main : MonoBehaviour
 		//death checker
 		if(player.transform.position.y <= deathCheckerY)
 		{
-			if(died == false)
-			{
-				died = true;
-				die();
-			}
+			die();
+			died = true;
 		}
 	}
 
-	void die()
+	public void die()
 	{
-		print("You died!");
-		SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+		if(died == false)
+		{
+			print("You died!");
+			SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+			died = true;
+		}
 	}
 
 	void win()
 	{
-		print("You win!");
-		VarManager.level++;
-		VarManager.save();
+		//won used bc win function will get called twice
+		if(won == false)
+		{
+			print("You win!");
 
-		SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-	}
+			if(VarManager.currentLevel == VarManager.level)
+			{
+				VarManager.level++;
+				VarManager.save();
+			}
 
-	public void loadLevel(int seed)
-	{
-		generateLevel(20, seed);
+			VarManager.currentLevel++;
+
+			SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+
+			won = true;
+		}
 	}
 
 	void generateLevel(int platformAmount, int seed)

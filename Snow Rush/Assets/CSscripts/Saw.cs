@@ -26,4 +26,11 @@ public class Saw : MonoBehaviour
 		spun = true;
 	}
 
+	void OnCollisionEnter2D(Collision2D collision)
+	{
+		if(collision.gameObject == Main.playerInstance)
+		{
+			Main.playerInstance.GetComponent<Main>().die();
+		}
+	}
 }

@@ -5,6 +5,7 @@ using UnityEngine;
 public class VarManager
 {
 	public static int level; //starts at 0
+	public static int currentLevel; //starts at 0
 
 	public static void save()
 	{
